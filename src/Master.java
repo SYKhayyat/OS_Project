@@ -19,17 +19,16 @@ public class Master {
                  public void run() {
                      while (true) {
                          try {
-                             Socket ClientSocket = serverSocket.accept();
+                             Socket clientSocket = serverSocket.accept();
+
                          } catch (IOException e) {
                              throw new RuntimeException(e);
                          }
                      }
                  }
              });
-             Socket clientSocket1 = serverSocket.accept();
-             Socket clientSocket2 = serverSocket.accept();
-             Socket clientSocket3 = serverSocket.accept();
-             Socket clientSocket4 = serverSocket.accept();
+
+
              ObjectInputStream input1 = new ObjectInputStream(clientSocket1.getInputStream());
              ObjectInputStream input2 = new ObjectInputStream(clientSocket2.getInputStream());
              ObjectOutputStream output1 = new ObjectOutputStream(clientSocket1.getOutputStream());
