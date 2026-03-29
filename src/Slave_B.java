@@ -1,57 +1,61 @@
+// Shaul Khayyat T002317
 import java.io.*;
-import java.net.Socket;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.net.*;
 
-public class Slave_B implements Slave{
-    private Queue<Job> jobs = new LinkedList<>();
-    private Socket socket;
+public class Slave_B  {
+    static final int ID = 1;
 
-    @Override
-    public void process() {
-        try(Socket socket = new Socket("127.0.0.1", 30121);
-            InputStream is = socket.getInputStream();
-            ObjectInputStream ois = new ObjectInputStream(is);
-            OutputStream os = socket.getOutputStream();
-            PrintWriter pw = new PrintWriter(os);
+    public static void main(String[] args) throws IOException{
+
+        // Hardcode in IP and Port here if required
+        //args = new String[] {"127.0.0.1", "30121"};
+
+        if (args.length != 2) {
+            System.err.println(
+                    "Usage: java EchoClient <host name> <port number>");
+            System.exit(1);
+        }
+
+        String hostName = args[0];
+        int portNumber = Integer.parseInt(args[1]);
+
+        try (
+                Socket clientCommSock = new Socket(hostName, portNumber);
+                OutputStream os = clientCommSock.getOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(os);
+                InputStream is = clientCommSock.getInputStream();
+                ObjectInputStream ois = new ObjectInputStream(is)
         ) {
-            acceptJob(ois);
-            doJob(pw);
-        } catch (Exception e){
-            System.out.println(e.getMessage());
-        }
-    }
-
-    @Override
-    public void acceptJob(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        Object obj;
-        while ((obj = ois.readObject()) != null) {
-            if (obj instanceof Job) {
-                jobs.add((Job) obj);
+            oos.writeObject("SLAVE");
+            oos.writeObject(ID);
+            while(true){
+                Job job = (Job) ois.readObject();
+                if (job.getType() == ID){
+                    System.out.println("Starting optimal job...");
+                    Thread.sleep(2000);
+                    System.out.println("Finished " + job.getPid() + ":");
+                    System.out.println("Optimal - 2 sec. sleep.");
+                } else {
+                    System.out.println("Starting non-optimal job...");
+                    Thread.sleep(10000);
+                    System.out.println("Finished " + job.getPid() + ":");
+                    System.out.println("Non-optimal - 10 sec. sleep.");
+                }
+                oos.writeObject(job);
+                oos.flush();
             }
+        } catch(UnknownHostException e){
+            System.err.println("Don't know about host " + hostName);
+            System.exit(1);
+        } catch(IOException e){
+            System.err.println("Couldn't get I/O for the connection to " +
+                    hostName);
+            System.exit(1);
+        } catch (ClassNotFoundException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
-
-    @Override
-    public void doJob(PrintWriter pw) throws InterruptedException {
-        Job currentJob;
-        while (! jobs.isEmpty()){
-            currentJob = jobs.remove();
-            if (currentJob.getType() == 1){
-                System.out.println("Running job " + currentJob.getPid() + " of Type B...");
-                Thread.sleep(2000);
-                System.out.println("Finished job " + currentJob.getPid() + " of Type B...");
-            } else if(currentJob.getType() == 0){
-                System.out.println("Running job " + currentJob.getPid() + " of Type A...");
-                Thread.sleep(10000);
-                System.out.println("Finished job " + currentJob.getPid() + " of Type A...");
-            }
-            alertMaster(pw, currentJob);
-        }
-    }
-
-    @Override
-    public void alertMaster(PrintWriter pw, Job currentJob) throws InterruptedException {
-        pw.println(currentJob.getPid() + ": done.");
+    public int getType(){
+        return ID;
     }
 }

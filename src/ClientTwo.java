@@ -3,8 +3,9 @@ import java.io.*;
 import java.net.*;
 import java.util.Random;
 
-public class ClientTwo implements Client {
+public class ClientTwo  {
     public static void main(String[] args) throws IOException{
+        final int ID = 2;
 
         // Hardcode in IP and Port here if required
         //args = new String[] {"127.0.0.1", "30121"};
@@ -19,30 +20,60 @@ public class ClientTwo implements Client {
         int portNumber = Integer.parseInt(args[1]);
 
         try (
-                Socket clientSocket = new Socket(hostName, portNumber);
-                OutputStream os = clientSocket.getOutputStream();
+                Socket clientCommSock = new Socket(hostName, portNumber);
+                OutputStream os = clientCommSock.getOutputStream();
                 ObjectOutputStream oos = new ObjectOutputStream(os);
-                InputStream is = clientSocket.getInputStream();
-                ObjectInputStream ois = new ObjectInputStream(is);
-//                BufferedReader stdIn = // standard input stream to get user's requests
-//                        new BufferedReader(
-//                                new InputStreamReader(System.in))
+                InputStream is = clientCommSock.getInputStream();
+                ObjectInputStream ois = new ObjectInputStream(is)
         ) {
-//            String userInput;
-//            String serverResponse;
-//            userInput = stdIn.readLine();
-//            while (userInput != null) {
-//                requestWriter.println(userInput);// send request to server
-//                userInput = stdIn.readLine();
-//            }
-            Random rand = new Random();
-            int r;
-            for (int i = 0; i < 100; i++) {
-                r = rand.nextInt(0, 2);
-                Job job = new Job(r, "1-" + i);
-                job.setClient(2);
-                oos.writeObject(job);
-            }
+            System.out.println("This is Client 2, sending jobs.");
+            oos.writeObject("CLIENT");
+            oos.writeObject(ID);
+            Thread writer = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Random rand = new Random();
+                    int r;
+                    for (int i = 0; i < 100; i++) {
+                        r = rand.nextInt(0, 2);
+                        if (rand.nextInt(0, 2) == 1){
+                            try {
+                                Thread.sleep(5000);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        Job job = new Job(r, "2-" + i);
+                        job.setClient(ID);
+                        try {
+                            oos.writeObject(job);
+                            oos.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            });
+            writer.start();
+            Thread reader = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while(true){
+                        try {
+                            Job job = (Job) ois.readObject();
+                            System.out.println("Job " + job.getPid() + " completed.");
+                        } catch (EOFException e) {
+                            break;
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            });
+            reader.start();
+
+            writer.join();
+            reader.join();
         } catch(UnknownHostException e){
             System.err.println("Don't know about host " + hostName);
             System.exit(1);
@@ -50,6 +81,8 @@ public class ClientTwo implements Client {
             System.err.println("Couldn't get I/O for the connection to " +
                     hostName);
             System.exit(1);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }
