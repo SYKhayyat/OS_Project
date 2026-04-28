@@ -32,6 +32,10 @@ public class Master {
                             while(slaveListSharedObj.isEmpty()){
                                 Thread.sleep(100);
                             }
+                            System.out.println("[Scheduler] Current slaves: " + slaveListSharedObj.size());
+                            for (SlaveHandler sh : slaveListSharedObj) {
+                                System.out.println("  Slave type " + sh.getType() + ", remainingTime=" + sh.getRemainingTime());
+                            }
                             long[] times = new long[slaveListSharedObj.size()];
                             for (int i = 0; i < times.length; i++) {
                                 SlaveHandler sh = slaveListSharedObj.get(i);
@@ -69,6 +73,7 @@ public class Master {
                             ObjectOutputStream oos = new ObjectOutputStream(os);
                             String s = (String) ois.readObject();
                             if (s.equals("SLAVE")) {
+                                System.out.println("[Master] Slave added.    " + slaveListSharedObj.size());
                                 SlaveHandler sh = new SlaveHandler(clientSocket, ois, oos, clientListSharedObj, (Integer) ois.readObject());
                                 slaveListSharedObj.add(sh);
                                 sh.start();
