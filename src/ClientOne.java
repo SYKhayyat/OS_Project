@@ -1,8 +1,8 @@
 // Shaul Khayyat T002317
 import java.io.*;
 import java.net.*;
-import java.sql.SQLOutput;
 import java.util.Random;
+import java.util.Scanner;
 
 public class ClientOne {
     public static void main(String[] args) throws IOException{
@@ -21,32 +21,29 @@ public class ClientOne {
         int portNumber = Integer.parseInt(args[1]);
 
         try (
-                Socket clientCommSock = new Socket(hostName, portNumber);
-                OutputStream os = clientCommSock.getOutputStream();
+                Socket clientSocket = new Socket(hostName, portNumber);
+                OutputStream os = clientSocket.getOutputStream();
                 ObjectOutputStream oos = new ObjectOutputStream(os);
-                InputStream is = clientCommSock.getInputStream();
+                InputStream is = clientSocket.getInputStream();
                 ObjectInputStream ois = new ObjectInputStream(is)
         ) {
             System.out.println("This is Client 1, sending jobs.");
             oos.writeObject("CLIENT");
             oos.writeObject(ID);
-            Thread writer = new Thread(new Runnable() {
+            Thread reader = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     Random rand = new Random();
                     int r;
-                    for (int i = 0; i < 100; i++) {
-                        r = rand.nextInt(0, 2);
-                        if (rand.nextInt(0, 2) == 1){
-                            try {
-                                Thread.sleep(5000);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        Job job = new Job(r, "1-" + i);
-                        job.setClient(ID);
+                    int i = 0;
+                    while (true){
                         try {
+                        System.in.read();
+                        System.in.skip(1);
+                        r = rand.nextInt(0, 2);
+                        Job job = new Job(r, "1-" + i);
+                        i++;
+                        job.setClient(ID);
                             oos.writeObject(job);
                             oos.flush();
                         } catch (IOException e) {
@@ -55,8 +52,8 @@ public class ClientOne {
                     }
                 }
             });
-            writer.start();
-            Thread reader = new Thread(new Runnable() {
+            reader.start();
+            Thread writer = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     while(true){
@@ -71,7 +68,7 @@ public class ClientOne {
                     }
                 }
             });
-            reader.start();
+            writer.start();
 
             writer.join();
             reader.join();

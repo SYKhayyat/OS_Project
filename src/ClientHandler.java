@@ -5,7 +5,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ClientHandler {
-    private Socket clientCommSocket = null;
     private ObjectInputStream ois;
     private ObjectOutputStream oos;
     private BlockingQueue<Job> finishedJobs;
@@ -13,8 +12,7 @@ public class ClientHandler {
     List<SlaveHandler> slaveList;
     private BlockingQueue<Job> unfinishedJobs;
 
-    public ClientHandler(Socket clientSocket, ObjectInputStream ois, ObjectOutputStream oos, List<SlaveHandler> slaveList, BlockingQueue<Job> unfinishedJobs, Integer integer){
-        this.clientCommSocket = clientSocket;
+    public ClientHandler(ObjectInputStream ois, ObjectOutputStream oos, List<SlaveHandler> slaveList, BlockingQueue<Job> unfinishedJobs, Integer integer){
         this.ois = ois;
         this.oos = oos;
         finishedJobs = new LinkedBlockingQueue<>();
@@ -25,6 +23,7 @@ public class ClientHandler {
 
     public void start(){
         Thread clientReader = new Thread(new Runnable() {
+            // This reads jobs from the client.
             @Override
             public void run() {
                 while (true) {
@@ -38,6 +37,7 @@ public class ClientHandler {
             }
         });
         Thread clientWriter = new Thread(new Runnable() {
+            // This sends finished jobs back to the right client.
             @Override
             public void run() {
                 while(true){

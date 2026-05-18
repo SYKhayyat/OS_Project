@@ -20,10 +20,10 @@ public class Slave_A  {
         int portNumber = Integer.parseInt(args[1]);
 
         try (
-                Socket clientCommSock = new Socket(hostName, portNumber);
-                OutputStream os = clientCommSock.getOutputStream();
+                Socket clientSocket = new Socket(hostName, portNumber);
+                OutputStream os = clientSocket.getOutputStream();
                 ObjectOutputStream oos = new ObjectOutputStream(os);
-                InputStream is = clientCommSock.getInputStream();
+                InputStream is = clientSocket.getInputStream();
                 ObjectInputStream ois = new ObjectInputStream(is)
         ) {
             oos.writeObject("SLAVE");
